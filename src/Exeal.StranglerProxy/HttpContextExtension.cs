@@ -1,15 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using Microsoft.AspNetCore.Http;
 
 namespace Exeal.StranglerProxy
 {
     internal static class HttpContextExtension
     {
-        private static string AuthorizationKey = "Authorization";
-
         public static HttpRequestMessage CloneRequestFor(this HttpContext context, Uri targetUri)
         {
             var actualRequest = context.Request;
@@ -21,17 +17,23 @@ namespace Exeal.StranglerProxy
                 RequestUri = targetUri,
             };
 
-            foreach (var header in actualRequest.Headers)
-            {
-                remoteRequest.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
-            }
+            CloneHeaders(actualRequest, remoteRequest);
 
             remoteRequest.Headers.Host = targetUri.Host;
 
-            if (actualRequest.Headers.Keys.Any(key => key == AuthorizationKey))
-                remoteRequest.Headers.Authorization = AuthenticationHeaderValue.Parse(actualRequest.Headers[AuthorizationKey]);
-
             return remoteRequest;
+        }
+
+        private static void CloneHeaders(HttpRequest actualRequest, HttpRequestMessage remoteRequest)
+        {
+            foreach (var header in actualRequest.Headers)
+            {
+                var headerName = header.Key;
+                var headerValue = header.Value.ToArray();
+
+                if (!remoteRequest.Headers.TryAddWithoutValidation(headerName, headerValue))
+                    remoteRequest.Content?.Headers.TryAddWithoutValidation(headerName, headerValue);
+            }
         }
     }
 }

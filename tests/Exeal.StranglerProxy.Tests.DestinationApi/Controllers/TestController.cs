@@ -50,5 +50,16 @@ namespace DestinationApi.Controllers
                 Authorization = this.Request.Headers["Authorization"]
             });
         }
+
+        [Route("headers/{headerKey}")]
+        [HttpGet]
+        public IActionResult ReadHeader(string headerKey)
+        {
+            return base.Ok(new
+            {
+                DestinationController = true,
+                header = this.Request.Headers[headerKey]
+            });
+        }
     }
 }
